@@ -1,0 +1,170 @@
+C++ SYSTEMS PROGRAMMING EXERCISE — LIMIT ORDER BOOK CORE
+=======================================================
+
+Context
+-------
+You are implementing the core data structure of a limit order book for a single
+financial instrument. The system processes a sequential stream of order events
+and must maintain correct price–time priority.
+
+No prior knowledge of financial markets is required. All rules are specified
+explicitly below.
+
+The goal of this exercise is to evaluate data-structure design, correctness,
+performance awareness, and code clarity in modern C++ (C++23).
+
+---------------------------------------------------------------------
+
+Event Types
+-----------
+
+Events arrive in strict chronological order.
+
+1) Add
+------
+Add(order_id, side, price, quantity)
+
+- order_id : unique positive integer
+- side     : Bid or Ask
+- price    : integer tick value
+- quantity : positive integer
+
+Creates a new order and inserts it into the book.
+
+2) Cancel
+---------
+Cancel(order_id)
+
+Removes the referenced order from the book.
+
+3) Modify
+---------
+Modify(order_id, new_quantity)
+
+Changes the remaining quantity of an existing order.
+
+Rules:
+- If new_quantity < old_quantity:
+    Quantity is reduced and time priority is preserved.
+- If new_quantity > old_quantity:
+    Quantity is increased and the order loses time priority.
+    It moves to the back of its price level’s FIFO queue.
+
+4) Trade
+--------
+Trade(order_id, trade_quantity)
+
+Reduces the remaining quantity by trade_quantity.
+If remaining quantity reaches zero, the order is removed.
+
+---------------------------------------------------------------------
+
+Book Semantics
+--------------
+
+- Orders are grouped by (side, price)
+- Each price level maintains a FIFO queue of orders
+- Higher bid prices are better
+- Lower ask prices are better
+- Aggregated quantity per price level must be tracked
+
+---------------------------------------------------------------------
+
+Required API
+------------
+
+Implement a C++23 class with at least the following interface:
+
+struct BestQuote {
+    int price;
+    int quantity;   // aggregated quantity at that price
+};
+
+enum class Side {
+    Bid,
+    Ask
+};
+
+class OrderBook {
+public:
+    void on_add(int order_id, Side side, int price, int quantity);
+    void on_cancel(int order_id);
+    void on_modify(int order_id, int new_quantity);
+    void on_trade(int order_id, int trade_quantity);
+
+    std::optional<BestQuote> best_bid() const;
+    std::optional<BestQuote> best_ask() const;
+
+    int depth_at(Side side, int price) const;
+};
+
+---------------------------------------------------------------------
+
+Constraints
+-----------
+
+- Single-threaded
+- Event stream is valid:
+    - No invalid order IDs
+    - No negative quantities
+- Maximum number of live orders is known at construction time
+- No dynamic memory allocation in the hot path after initialization
+
+---------------------------------------------------------------------
+
+Correctness Rules
+-----------------
+
+- Price–time priority must be enforced
+- FIFO ordering applies within each price level
+- Modify-increase causes loss of time priority
+- Modify-decrease preserves time priority
+- Trade reduces quantity and removes order at zero
+- Aggregated quantities must always be correct
+
+---------------------------------------------------------------------
+
+Evaluation Criteria
+-------------------
+
+You are evaluated on:
+
+- Correctness of priority and quantities
+- Data-structure design
+- Performance awareness
+- Code clarity and invariants
+- Handling of edge cases
+
+---------------------------------------------------------------------
+
+Deliverables
+------------
+
+1) order_book.hpp / order_book.cpp implementing the API
+2) Small driver or tests demonstrating correctness
+
+---------------------------------------------------------------------
+
+Notes
+-----
+
+- You may consult cppreference.com for standard library details
+- You may ask clarifying questions
+- Partial solutions with clear reasoning are acceptable
+- This is a systems/data-structures problem, not a finance problem
+
+---------------------------------------------------------------------
+
+Optional Extensions
+-------------------
+
+If time permits:
+
+- mid_price and spread computation
+- microprice using top-of-book imbalance
+- top-of-book change detection
+- performance notes or benchmarks
+
+---------------------------------------------------------------------
+
+End of Task

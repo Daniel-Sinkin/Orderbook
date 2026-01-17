@@ -1,0 +1,9 @@
+-std=c++23
+-Wall
+-Wextra
+-pedantic
+
+-Iinclude
+-I/opt/homebrew/include
+
+-stdlib=libc++
